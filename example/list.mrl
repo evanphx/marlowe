@@ -1,0 +1,7 @@
+class List[T]
+  type Elements = Array[T]
+
+  def initialize
+    @total = 0
+  end
+end

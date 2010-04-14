@@ -1,0 +1,279 @@
+# vim: filetype=treetop
+
+module Marlowe
+
+grammar Grammar
+
+  rule all
+    toplevel+ {
+      def classes
+        elements
+      end
+    }
+  end
+
+  rule toplevel
+    class_start
+  end
+
+  rule class_start
+    'class' xspace class_name _type_params:(type_params?) stmt_end space? body:(class_body?) space? 'end' stmt_end white* <ClassDeclaration>
+  end
+
+  rule class_name
+    ([A-Z] alnum*)
+  end
+
+  rule class_body
+    head:declaration tail:(space declaration)* {
+      def declarations
+        [head] + tail
+      end
+
+      def tail
+        super.elements.map { |elt| elt.declaration }
+      end
+    }
+  end
+
+  rule type_params
+    '[' xspace* type_param more:(xspace* ',' xspace* type_param)* xspace* ']' <TypeParams>
+  end
+
+  rule type_param
+    restricted_type / type_name
+  end
+
+  rule restricted_type
+    class_name xspace* ':' xspace* type_name <RestrictedType>
+  end
+
+  rule declaration
+    defn / type_alias
+  end
+
+  rule type_alias
+    'type' xspace+ type_name xspace* '=' xspace* named_type stmt_end xspace* <TypeAlias>
+  end
+
+  rule named_type
+    type_instantiate
+    /
+    type_name
+  end
+
+  rule type_instantiate
+    type_name type_params <TypeInstantiate>
+  end
+
+  rule defn
+    'def' xspace+ single:('self.')? defn_name
+       args:(defn_args?) stmt_end space?
+       body:(expression_list?) space? 'end' stmt_end xspace* <DefineMethod>
+  end
+
+  rule defn_name
+    [A-Za-z] [A-Za-z0-9_]*
+  end
+
+  rule defn_args
+    '(' defn_arg_list ')' <Arguments>
+  end
+
+  rule defn_arg_list
+    head:typed_identifier tail:(white* ',' white* typed_identifier)* {
+      def declarations
+        [head] + tail
+      end
+
+      def tail
+        super.elements.map { |elt| elt.typed_identifier }
+      end
+    }
+  end
+
+  rule typed_identifier
+    defn_name white* ':' white* type_name <TypedIdentifier>
+  end
+
+  rule type_name
+    !keyword scope:(identifier '::')? name:([A-Za-z] [A-Za-z0-9_]* "*"*) <TypeName>
+  end
+
+  rule expression_list
+    head:expression tail:(space expression)* {
+      def expressions
+        [head] + tail
+      end
+
+      def tail
+        super.elements.map { |elt| elt.expression }
+      end
+    }
+  end
+
+  rule expression
+    comparison
+  end
+
+  rule comparison
+    lhs:additive space operator:compare_op space rhs:comparison <ComparisonOperation>
+    / additive
+  end
+
+  rule compare_op
+    "===" / "==" / "=" / ">" / "<"
+  end
+
+  rule additive
+    lhs:multitive space operator:add_op space rhs:additive <AdditiveOperation>
+    /
+    multitive
+  end
+
+  rule add_op
+    "+" / "-"
+  end
+
+  rule multitive
+    lhs:aref space operator:multitive_op space rhs:multitive <MultitiveOperation>
+    /
+    aref
+  end
+
+  rule multitive_op
+    "*" / "/"
+  end
+
+  rule aref
+    recv:aref_recv '[' space? index:expression space? ']' <ArefOperator>
+    /
+    sub_expression1
+  end
+
+  rule aref_recv
+      function_call
+    / scoped_function_call
+    / primary
+  end
+
+  rule sub_expression1
+      function_call
+    / function_call_np
+    / scoped_function_call
+    / scoped_function_call_np
+    / primary
+  end
+
+  rule expression_np
+    recv:aref_recv '[' space? index:expression space? ']' <ArefOperator>
+    /
+    aref_recv
+  end
+
+  rule primary
+      identifier
+    / type_name
+    / scoped_identifier
+    / double_quoted_string
+    / single_quoted_string
+    / number
+  end
+
+  rule scoped_identifier
+    "@" identifier <ScopedIdentifier>
+  end
+
+  rule number
+    [0-9]+ <Number>
+  end
+
+  rule double_quoted_string
+    '"' string:(!'"' ("\\\\" / '\"' / .))* '"' <QuotedString>
+  end
+
+  rule single_quoted_string
+    "'" string:(!"'" ("\\\\" / "\\'" / .))* "'" <QuotedString>
+  end
+
+
+  rule keyword
+    ('class' / 'def' / 'end') !non_space_char
+  end
+
+  rule non_space_char
+    ![;\n ] .
+  end
+
+  rule identifier
+    !keyword [a-z] [A-Za-z0-9_]* <Identifier>
+  end
+
+  rule function_scope
+    identifier '::'
+  end
+
+  rule scoped_function_call
+    function_scope function_call <ScopedFunctionCall>
+  end
+
+  rule function_call
+    identifier '(' params:(function_call_params?) ')' <FunctionCall>
+  end
+
+  rule function_call_params
+    expression more:(space? ',' space? expression)* <CallParams>
+  end
+
+  rule scoped_function_call_np
+    function_scope function_call:function_call_np <ScopedFunctionCall>
+  end
+
+  rule function_call_np
+    identifier [\s\t]+ params:function_call_np_params <FunctionCall>
+  end
+
+  rule function_call_np_params
+    expression:expression_np
+    more:(space? ',' space? expression:expression_np)* <CallParams>
+  end
+
+  rule method_call
+    primary '.' identifier '(' function_call_params ')'
+  end
+
+  rule non_space_char
+    !space .
+  end
+
+  rule alpha_char
+    [A-Za-z_]
+  end
+
+  rule alnum
+    alpha_char / [0-9]
+  end
+
+  rule space
+    white+
+    # (white / comment_to_eol)+
+  end
+
+  rule comment_to_eol
+    '#' (!"\n" .)*
+  end
+
+  rule white
+    [ \t\n\r]
+  end
+
+  rule xspace
+    [ \t]
+  end
+
+  rule stmt_end
+    xspace* [;\n]
+  end
+end
+
+end
