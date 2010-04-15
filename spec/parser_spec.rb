@@ -679,13 +679,13 @@ end
             [:number, "11"]]]]]]]]
   end
 
-  it "parses an 'if' with a 'then'" do
+  it "parses an 'if' with a 'else'" do
     txt = <<-CODE
 class Foo
   def main
     if argv
       argv.size
-    then
+    else
       18
     end
   end

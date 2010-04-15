@@ -8,9 +8,9 @@ module Marlowe
 
       sx = [:if, condition.to_sexp, b]
 
-      return sx if then_body.empty?
+      return sx if else_body.empty?
 
-      t = then_body.body.expressions.map { |x| x.to_sexp }
+      t = else_body.body.expressions.map { |x| x.to_sexp }
 
       sx << ([:body] + t)
 

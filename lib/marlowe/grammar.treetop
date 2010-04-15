@@ -209,19 +209,19 @@ grammar Grammar
 
 
   rule keyword
-    ('class' / 'def' / 'end' / 'if' / 'then' / 'while' / 'until') !non_space_char
+    ('class' / 'def' / 'end' / 'if' / 'else' / 'while' / 'until') !non_space_char
   end
 
   rule non_space_char
     ![;\n ] .
   end
 
-  rule if_then
-    'then' space? body:(expression_list?) space?
+  rule if_else
+    'else' space? body:(expression_list?) space?
   end
 
   rule if
-    'if' xspace+ condition:primary stmt_end space? body:(expression_list?) space? then_body:(if_then?) 'end' <If>
+    'if' xspace+ condition:primary stmt_end space? body:(expression_list?) space? else_body:(if_else?) 'end' <If>
   end
 
   rule while
