@@ -210,6 +210,24 @@ end
 
   end
 
+  it "parses two expression in a def" do
+    txt = <<-CODE
+class Foo
+  def main
+    42
+    47
+  end
+end
+    CODE
+
+    parse(txt).should == [:marlowe,
+      [:class, "Foo", [:body,
+        [:method, "main", false, nil, [:body,
+          [:number, "42"],
+          [:number, "47"]]]]]]
+
+  end
+
   it "parses a double quoted string" do
     txt = <<-CODE
 class Foo
@@ -621,4 +639,68 @@ end
                 [:number, "1"],
                 [:mcall, [:id, "r2"], "m2", [:args]]]]]]]]]]]
   end
+
+  it "parses an 'if'" do
+    txt = <<-CODE
+class Foo
+  def main
+    if argv
+      argv.size
+    end
+  end
+end
+    CODE
+
+    parse(txt).should == [:marlowe,
+      [:class, "Foo", [:body,
+        [:method, "main", false, nil, [:body,
+          [:if, [:id, "argv"], [:body,
+            [:mcall,
+              [:id, "argv"], "size", [:args]]]]]]]]]
+  end
+
+  it "parses an 'if' with multiple expressions in the body" do
+    txt = <<-CODE
+class Foo
+  def main
+    if argv
+      10
+      11
+    end
+  end
+end
+    CODE
+
+    parse(txt).should == [:marlowe,
+      [:class, "Foo", [:body,
+        [:method, "main", false, nil, [:body,
+          [:if, [:id, "argv"], [:body,
+            [:number, "10"],
+            [:number, "11"]]]]]]]]
+  end
+
+  it "parses an 'if' with a 'then'" do
+    txt = <<-CODE
+class Foo
+  def main
+    if argv
+      argv.size
+    then
+      18
+    end
+  end
+end
+    CODE
+
+    parse(txt).should == [:marlowe,
+      [:class, "Foo", [:body,
+        [:method, "main", false, nil, [:body,
+          [:if, [:id, "argv"],
+            [:body,
+              [:mcall,
+                [:id, "argv"], "size", [:args]]],
+            [:body,
+              [:number, "18"]]]]]]]]
+  end
+
 end

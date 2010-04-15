@@ -100,14 +100,14 @@ grammar Grammar
     !keyword scope:(identifier '::')? name:([A-Za-z] [A-Za-z0-9_]* "*"*) <TypeName>
   end
 
-  rule expression_list
-    head:expression tail:(stmt_end expression)* {
-      def expressions
-        [head] + tail
-      end
+  rule more_expressions
+    stmt_end space? expression
+  end
 
-      def tail
-        super.elements.map { |elt| elt.expression }
+  rule expression_list
+    expression more:more_expressions* {
+      def expressions
+        [expression] + more.elements.map { |x| x.expression }
       end
     }
   end
@@ -156,6 +156,7 @@ grammar Grammar
     / scoped_function_call
     / method_call
     / method_call_np
+    / if
     / primary
   end
 
@@ -167,6 +168,7 @@ grammar Grammar
     / method_call
     / method_call_np_args
     / method_call_np
+    / if
     / primary
   end
 
@@ -203,11 +205,19 @@ grammar Grammar
 
 
   rule keyword
-    ('class' / 'def' / 'end') !non_space_char
+    ('class' / 'def' / 'end' / 'if' / 'then') !non_space_char
   end
 
   rule non_space_char
     ![;\n ] .
+  end
+
+  rule if_then
+    'then' space? body:(expression_list?) space?
+  end
+
+  rule if
+    'if' xspace+ condition:primary stmt_end space? body:(expression_list?) space? then_body:(if_then?) 'end' <If>
   end
 
   rule identifier

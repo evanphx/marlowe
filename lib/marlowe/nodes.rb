@@ -2,6 +2,22 @@ module Marlowe
   class Node < Treetop::Runtime::SyntaxNode
   end
 
+  class If < Node
+    def to_sexp
+      b = [:body] + body.expressions.map { |x| x.to_sexp }
+
+      sx = [:if, condition.to_sexp, b]
+
+      return sx if then_body.empty?
+
+      t = then_body.body.expressions.map { |x| x.to_sexp }
+
+      sx << ([:body] + t)
+
+      return sx
+    end
+  end
+
   class DefineMethod < Node
     attr_accessor :container
 
