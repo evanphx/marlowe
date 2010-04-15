@@ -18,6 +18,22 @@ module Marlowe
     end
   end
 
+  class While < Node
+    def to_sexp
+      b = [:body] + body.expressions.map { |x| x.to_sexp }
+
+      return [:while, condition.to_sexp, b]
+    end
+  end
+
+  class Until < Node
+    def to_sexp
+      b = [:body] + body.expressions.map { |x| x.to_sexp }
+
+      return [:until, condition.to_sexp, b]
+    end
+  end
+
   class DefineMethod < Node
     attr_accessor :container
 

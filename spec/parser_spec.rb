@@ -703,4 +703,41 @@ end
               [:number, "18"]]]]]]]]
   end
 
+  it "parses a 'while'" do
+    txt = <<-CODE
+class Foo
+  def main
+    while argv
+      argv.size
+    end
+  end
+end
+    CODE
+
+    parse(txt).should == [:marlowe,
+      [:class, "Foo", [:body,
+        [:method, "main", false, nil, [:body,
+          [:while, [:id, "argv"], [:body,
+            [:mcall,
+              [:id, "argv"], "size", [:args]]]]]]]]]
+  end
+
+  it "parses an 'until'" do
+    txt = <<-CODE
+class Foo
+  def main
+    until argv
+      argv.size
+    end
+  end
+end
+    CODE
+
+    parse(txt).should == [:marlowe,
+      [:class, "Foo", [:body,
+        [:method, "main", false, nil, [:body,
+          [:until, [:id, "argv"], [:body,
+            [:mcall,
+              [:id, "argv"], "size", [:args]]]]]]]]]
+  end
 end

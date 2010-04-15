@@ -157,6 +157,8 @@ grammar Grammar
     / method_call
     / method_call_np
     / if
+    / while
+    / until
     / primary
   end
 
@@ -169,6 +171,8 @@ grammar Grammar
     / method_call_np_args
     / method_call_np
     / if
+    / while
+    / until
     / primary
   end
 
@@ -205,7 +209,7 @@ grammar Grammar
 
 
   rule keyword
-    ('class' / 'def' / 'end' / 'if' / 'then') !non_space_char
+    ('class' / 'def' / 'end' / 'if' / 'then' / 'while' / 'until') !non_space_char
   end
 
   rule non_space_char
@@ -218,6 +222,14 @@ grammar Grammar
 
   rule if
     'if' xspace+ condition:primary stmt_end space? body:(expression_list?) space? then_body:(if_then?) 'end' <If>
+  end
+
+  rule while
+    'while' xspace+ condition:primary stmt_end space? body:(expression_list?) space? 'end' <While>
+  end
+
+  rule until
+    'until' xspace+ condition:primary stmt_end space? body:(expression_list?) space? 'end' <Until>
   end
 
   rule identifier
