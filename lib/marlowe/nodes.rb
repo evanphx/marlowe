@@ -121,6 +121,10 @@ module Marlowe
     def expressions
       [expression] + more.elements.map {|elt| elt.expression}
     end
+
+    def to_sexp
+      [:args] + expressions.map { |x| x.to_sexp }
+    end
   end
 
   class ScopedFunctionCall < Node
@@ -174,6 +178,55 @@ module Marlowe
     def to_sexp
       args = [:args] + arguments.map { |x| x.to_sexp }
       [:fcall, scope_identifier, func_name, args]
+    end
+  end
+
+  class MethodCall < Node
+    def name
+      apply.name.text_value
+    end
+
+    def to_sexp
+      if apply.arguments.empty?
+        args = [:args]
+      else
+        args = apply.arguments.to_sexp
+      end
+
+      outer = [:mcall, recv.to_sexp, name, args]
+      return outer if chaining.empty?
+
+      current = outer
+      chaining.elements.each do |ap|
+        if ap.arguments.empty?
+          sub_args = [:args]
+        else
+          sub_args = ap.arguments.to_sexp
+        end
+
+        current = [:mcall, current, ap.name.text_value, sub_args]
+      end
+
+      return current
+    end
+  end
+
+  class MethodCallNoParen < MethodCall
+    def to_sexp
+      current = [:mcall, recv.to_sexp, name, [:args]]
+      return current if chaining.empty?
+
+      chaining.elements.each do |ap|
+        current = [:mcall, current, ap.name.text_value, [:args]]
+      end
+
+      return current
+    end
+  end
+
+  class MethodCallNPArgs < MethodCallNoParen
+    def to_sexp
+      [:mcall, recv.to_sexp, name, arguments.to_sexp]
     end
   end
 

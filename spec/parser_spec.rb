@@ -3,13 +3,25 @@ require 'marlowe/parser'
 
 describe Marlowe::Parser do
 
+  def raw_parse(text)
+    parser = Marlowe::Parser.new(text)
+    parser.parse
+
+    unless parser.successful?
+      raise Marlowe::ParseError
+    end
+
+    return parser.to_sexp
+  end
+
   def parse(text)
     parser = Marlowe::Parser.new(text)
     parser.parse
 
     unless parser.successful?
+      puts
       parser.show_fixit
-      raise "unable to parse"
+      raise Marlowe::ParseError
     end
 
     return parser.to_sexp
@@ -460,5 +472,153 @@ end
           [:aref,
             [:fcall, "c", "thing", [:args]],
             [:number, "1"]]]]]]]
+  end
+
+  it "parses a method call with parens" do
+    txt = <<-CODE
+class Foo
+  def main
+    argv.size(1)
+  end
+end
+    CODE
+
+    parse(txt).should == [:marlowe,
+      [:class, "Foo", [:body,
+        [:method, "main", false, nil, [:body,
+          [:mcall,
+            [:id, "argv"],
+            "size",
+            [:args,
+              [:number, "1"]]]]]]]]
+  end
+
+  it "parses a method call with empty parens" do
+    txt = <<-CODE
+class Foo
+  def main
+    argv.size()
+  end
+end
+    CODE
+
+    parse(txt).should == [:marlowe,
+      [:class, "Foo", [:body,
+        [:method, "main", false, nil, [:body,
+          [:mcall, [:id, "argv"], "size", [:args]]]]]]]
+  end
+
+  it "parses a method call chained to another method call" do
+    txt = <<-CODE
+class Foo
+  def main
+    argv.size().age()
+  end
+end
+    CODE
+
+    parse(txt).should == [:marlowe,
+      [:class, "Foo", [:body,
+        [:method, "main", false, nil, [:body,
+          [:mcall,
+            [:mcall, [:id, "argv"], "size", [:args]],
+            "age",
+            [:args]]]]]]]
+  end
+
+  it "parses a method call with no parens and no arguments" do
+    txt = <<-CODE
+class Foo
+  def main
+    argv.size
+  end
+end
+    CODE
+
+    parse(txt).should == [:marlowe,
+      [:class, "Foo", [:body,
+        [:method, "main", false, nil, [:body,
+          [:mcall, [:id, "argv"], "size", [:args]]]]]]]
+  end
+
+  it "parses a method call with no parens and arguments" do
+    txt = <<-CODE
+class Foo
+  def main
+    argv.size 1
+  end
+end
+    CODE
+
+    parse(txt).should == [:marlowe,
+      [:class, "Foo", [:body,
+        [:method, "main", false, nil, [:body,
+          [:mcall, [:id, "argv"], "size",
+            [:args, [:number, "1"]]]]]]]]
+  end
+
+  it "parses a method call chained with no parens and arguments" do
+    txt = <<-CODE
+class Foo
+  def main
+    argv.size.add 1
+  end
+end
+    CODE
+
+    parse(txt).should == [:marlowe,
+      [:class, "Foo", [:body,
+        [:method, "main", false, nil, [:body,
+          [:mcall, [:id, "argv"], "size",
+            [:args, [:number, "1"]]]]]]]]
+  end
+
+  it "does not parse method calls with no parens used in arguments" do
+    txt = <<-CODE
+class Foo
+  def main
+    argv.size argv.add 1
+  end
+end
+    CODE
+
+    lambda {
+      raw_parse(txt)
+    }.should raise_error(Marlowe::ParseError)
+  end
+
+  it "parses method calls used as arguments to method calls" do
+    txt = <<-CODE
+class Foo
+  def main
+    argv.size(r1.m1, r2.m2())
+  end
+end
+    CODE
+
+    parse(txt).should == [:marlowe,
+      [:class, "Foo", [:body,
+        [:method, "main", false, nil, [:body,
+          [:mcall, [:id, "argv"], "size", [:args,
+              [:mcall, [:id, "r1"], "m1", [:args]],
+              [:mcall, [:id, "r2"], "m2", [:args]]]]]]]]]
+  end
+
+  it "parses method calls used as arguments to method calls (no parens)" do
+    txt = <<-CODE
+class Foo
+  def main
+    argv.size(r1.m1 1, r2.m2())
+  end
+end
+    CODE
+
+    parse(txt).should == [:marlowe,
+      [:class, "Foo", [:body,
+        [:method, "main", false, nil, [:body,
+          [:mcall, [:id, "argv"], "size", [:args,
+              [:mcall, [:id, "r1"], "m1", [:args,
+                [:number, "1"],
+                [:mcall, [:id, "r2"], "m2", [:args]]]]]]]]]]]
   end
 end

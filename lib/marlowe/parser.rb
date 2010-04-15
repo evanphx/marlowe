@@ -4,6 +4,8 @@ require 'marlowe/nodes'
 Treetop.load File.expand_path("../grammar.treetop", __FILE__)
 
 module Marlowe
+  class ParseError < SyntaxError; end
+
   class Parser
     def initialize(text)
       @parser = GrammarParser.new

@@ -101,7 +101,7 @@ grammar Grammar
   end
 
   rule expression_list
-    head:expression tail:(space expression)* {
+    head:expression tail:(stmt_end expression)* {
       def expressions
         [head] + tail
       end
@@ -154,6 +154,8 @@ grammar Grammar
   rule aref_recv
       function_call
     / scoped_function_call
+    / method_call
+    / method_call_np
     / primary
   end
 
@@ -162,6 +164,9 @@ grammar Grammar
     / function_call_np
     / scoped_function_call
     / scoped_function_call_np
+    / method_call
+    / method_call_np_args
+    / method_call_np
     / primary
   end
 
@@ -238,8 +243,28 @@ grammar Grammar
     more:(space? ',' space? expression:expression_np)* <CallParams>
   end
 
+  rule method_call_apply
+    '.' name:identifier '(' arguments:(function_call_params?) ')'
+  end
+
   rule method_call
-    primary '.' identifier '(' function_call_params ')'
+    recv:primary apply:method_call_apply chaining:(method_call_apply*) <MethodCall>
+  end
+
+  rule method_call_apply_np
+    '.' name:identifier
+  end
+
+  rule method_call_np
+    recv:primary apply:method_call_apply_np chaining:(method_call_apply_np*) <MethodCallNoParen>
+  end
+
+  rule method_call_np_args_recv
+    primary / method_call_np
+  end
+
+  rule method_call_np_args
+    recv:primary apply:method_call_apply_np chaining:(method_call_apply_np*) xspace+ arguments:function_call_np_params <MethodCallNPArgs>
   end
 
   rule non_space_char
