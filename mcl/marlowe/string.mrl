@@ -1,0 +1,15 @@
+package marlowe
+
+class String
+  var @size: system.Int32
+  var @data: system.Int8*
+
+  def initialize(size: system.Int32, data: system.Int8*)
+    @size = size
+    @data = data
+  end
+
+  def c_str
+    @data
+  end
+end

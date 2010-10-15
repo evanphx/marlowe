@@ -1,0 +1,15 @@
+package marlowe.posix
+
+alias FILE = external FILE
+bind fputs = external fputs(ptr: system.Int8*) : system.Int32
+bind puts  = external puts(ptr: system.Int8*) : system.Int32
+bind write = external write(fd: system.Int32,
+                                 ptr: system.Int8*,
+                                 bytes: system.Size) : system.Int32
+
+from "stdio.h"
+  bind foo = fgets
+  bind read = fread
+  bind fgets
+end
+

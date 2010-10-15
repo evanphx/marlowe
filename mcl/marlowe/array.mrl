@@ -1,0 +1,12 @@
+class Array[T]
+  type Elements = T*
+
+  def initialize
+    @size = 8
+    @elements = Marlowe.new_pointer[T](@size)
+  end
+
+  def at(n: int)
+    @elements
+  end
+end

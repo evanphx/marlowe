@@ -1,0 +1,13 @@
+class Stack
+
+  :own :synchronize
+    var @array : Array
+
+  :thread var @count : int
+
+  var @age : int
+
+  :Author(author = "Evan Phoenix", 30)
+  def initialize
+  end
+end

@@ -13,7 +13,18 @@ module Marlowe
     end
 
     def parse
-      @toplevel = @parser.parse(@code)
+      if @toplevel = @parser.parse(@code)
+        @toplevel.declarations.each_with_index do |ele, i|
+          case ele
+          when PackageDeclaration
+            if i != 0
+              raise ParseError, "package declaration wasn't first"
+            end
+          end
+        end
+      end
+
+      @toplevel
     end
 
     def successful?
@@ -48,7 +59,31 @@ module Marlowe
     end
 
     def to_sexp
-      [:marlowe] + @toplevel.classes.map { |x| x.to_sexp }
+      [:marlowe] + @toplevel.declarations.map { |x| x.to_sexp }
+    end
+
+    def declarations
+      @toplevel.declarations
+    end
+
+    def package
+      first = @toplevel.declarations.first
+
+      if first.kind_of? PackageDeclaration
+        return first.name
+      end
+
+      return nil
+    end
+
+    def find(what)
+      @toplevel.declarations.each do |decl|
+        if decl.kind_of? ClassDeclaration
+          return decl if decl.name == what
+        end
+      end
+
+      return nil
     end
 
     def to_xml(io)

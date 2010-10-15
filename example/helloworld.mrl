@@ -1,0 +1,12 @@
+import marlowe.io.IO
+import marlowe.posix
+
+class Hello
+  def self.main
+    var str = "w"
+    var fo = posix.fdopen 1, str.c_str
+
+    var io = IO.new(fo)
+    io.print("Hello World\n")
+  end
+end

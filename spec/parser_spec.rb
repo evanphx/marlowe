@@ -3,28 +3,12 @@ require 'marlowe/parser'
 
 describe Marlowe::Parser do
 
-  def raw_parse(text)
-    parser = Marlowe::Parser.new(text)
-    parser.parse
+  it "parses a package declaration" do
+    txt = <<-CODE
+package marlowe
+    CODE
 
-    unless parser.successful?
-      raise Marlowe::ParseError
-    end
-
-    return parser.to_sexp
-  end
-
-  def parse(text)
-    parser = Marlowe::Parser.new(text)
-    parser.parse
-
-    unless parser.successful?
-      puts
-      parser.show_fixit
-      raise Marlowe::ParseError
-    end
-
-    return parser.to_sexp
+    parse(txt).should == [:marlowe, [:package, "marlowe"]]
   end
 
   it "parses an empty class body" do

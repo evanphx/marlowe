@@ -1,0 +1,11 @@
+package marlowe.io
+
+class IO
+  def initialize(fd: posix.FILE*)
+    @fd = fd
+  end
+
+  def print(str: String)
+    posix.fputs str.c_str, @fd
+  end
+end
